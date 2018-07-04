@@ -1,0 +1,88 @@
+Parker_Capstone_Project
+========================================================
+author: Parker
+date: 2018/07/03
+autosize: true
+
+<style>
+.footer {
+    color: black;
+    background: #E8E8E8;
+    position: fixed;
+    top: 90%;
+    text-align:center;
+    width:100%;
+}
+</style>
+
+<div class="footer";font-size:80%;">
+capstone project
+</div>
+
+
+<style>
+.section .reveal .state-background {
+    background: green;
+    }
+</style>
+
+Introduction
+========================================================
+
+- The Capstone project is to apply text mining package of R to real business world
+- The purpose is to reasonally forcast potential next word based on the previous few common input from participants.
+- The hypothesis is that US relevant twitters and news could represent the common knowledge of persons across the world
+
+<style>
+.footer {
+    color: black;
+    background: #E8E8E8;
+    position: fixed;
+    top: 90%;
+    text-align:center;
+    width:100%;
+}
+</style>
+<div class="footer";font-size:80%;">
+capstone project
+</div>
+
+Data preparation
+========================================================
+
+- The US data including news, twitters and blogs are used
+- Random sample methods were used to keep 10,000 record for three three files (it would bias the results)
+- By means of text mining function, the unnecessary English words were removed to increase accuracy of prediction next word
+- ngramTokenizer function was applied to divide different sequency of words in terms of different levels of grams.
+
+<div class="footer";font-size:80%;">
+capstone project
+</div>
+
+
+
+
+
+Precition Algorithm
+========================================================
+
+- The core algorithm is centered on <span style="color:red">n-gram</span>
+- *Cited by Wikipedia: in the fields of computational linguistics and probability, an n-gram is a contiguous sequence of n items from a given sample of text or speech*
+- In this project, it is assumed that previous 2, 3, 4 sequency of words' variety of combinations could successfully mirror the ordinary persons' normal thoughts, indicating high possibility of next word
+- Specifically, if the last 2, 3 or 4 inputs words could exactly match the text lines of US data, the next word would be predicted in terms of highest frequency.
+
+<div class="footer";font-size:80%;">
+capstone project
+</div>
+
+ Output and resources
+======================================================
+- Please click <a href="https://github.com/ParkerHuang860918/R-Data-Science-Capstone-for-Cousera">the link </a> to get the full code from GitHub
+- Please click  <a href ="https://parker0918.shinyapps.io/Parker_Final_Capstone_Data_Science">the link </a> to ShinyApp GUI regarding the next word prediction in terms of previous few words input
+- Further research could be conduct to smooth the prediction algorithm by including different n-gram models instead of 2/3/4 grams, finding one way to efficiently reduce script running time, expanding the population of raw data to be involved and optimizing the choice of sample data, including other training data to increase accuracy of prediction and using one advanced version of computer for maximum usage of CPU and maximum storage of final data.
+
+
+<div class="footer";font-size:80%;">
+capstone project
+</div>
+
