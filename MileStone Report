@@ -1,0 +1,162 @@
+---
+title: "Milestone_Report"
+author: "Parker"
+date: "2018年5月22日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This milestone report will be applying data science from NLP. The following paragraphs could address the data extraction, cleaning and text mining of the so called HC Copora. This report is part of the data science capstone project of Coursera by means of R software.
+
+### loading data and read three different files in US folder
+```{r loading}
+setwd("C:/Users/hyh/Desktop/Coursera/R/Capstone Project/final")
+blogs_us <- readLines("./en_US/en_US.blogs.txt", encoding = "UTF-8", skipNul=TRUE)
+news_us <- readLines("./en_US/en_US.news.txt", encoding = "UTF-8", skipNul=TRUE)
+twitter_us <- readLines("./en_US/en_US.twitter.txt", encoding = "UTF-8", skipNul=TRUE)
+```
+
+###Sample data is generated as shown below
+
+```{r sample}
+sample_Twitter <- twitter_us[sample(1:length(twitter_us),10000)]
+sample_News <- news_us[sample(1:length(news_us),10000)]
+sample_Blogs <- blogs_us[sample(1:length(blogs_us),10000)]
+sample_All <- c(sample_Twitter,sample_News,sample_Blogs)
+
+
+```
+
+## Summary of loading data for file information, file length and word counts
+
+```{r summary}
+##Size of the US files and total sample file
+
+blogs_US_Info <- file.info("./en_US/en_US.blogs.txt")$size
+news_US_Info <- file.info("./en_US/en_US.news.txt")$size
+twitter_US_Info <- file.info("./en_US/en_US.twitter.txt")$size
+sample_All_Info <- file.info("./sample_ALL.txt")$size
+
+##length of the US files and total sample file
+
+blogs_US_Length <- length(blogs_us)
+news_US_Length <- length(news_us)
+twitter_US_Length <- length(twitter_us)
+sample_US_Length <- length(sample_All)
+
+##total world count of the US files and total sample file
+
+
+# Get words in files
+library(stringi)
+blogs_us_Words1 <- sum(stri_count_words(blogs_us))
+news_us_Words1 <- sum(stri_count_words(news_us))
+twitter_us_Words1 <- sum(stri_count_words(twitter_us))
+sample_US_Words1 <- sum(stri_count_words(sample_All))
+
+## final info table created to save details in txt version
+
+file_US_Summary<- data.frame(
+           file_name = c("blogs_US", "news_US", "twitter_US", "Sample_US"),
+           file_total_size = c(blogs_US_Info, news_US_Info,twitter_US_Info, sample_All_Info),
+           file_total_lines = c(blogs_US_Length, news_US_Length, twitter_US_Length, sample_US_Length),
+           file_total_word_counts = c(blogs_us_Words1, news_us_Words1, twitter_us_Words1,sample_US_Words1)
+)        
+
+
+file_US_Summary
+```
+
+# Clean data and then create n-gram data for prediction modelling
+
+```{r n-gram}
+library(tm)
+library(NLP)
+library(SnowballC)
+
+#clean data
+profanityWords_EN <- read.table("./profanityfilter_EN.txt", header = FALSE)
+names(profanityWords_EN)<-c("bad_words")
+
+#clean_Sample_Corpus_US <- Corpus(VectorSource(sample_All))
+clean_Sample_Corpus_US <- VCorpus(VectorSource(sample_All))
+
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, content_transformer(function(x) iconv(x, to="UTF-8", sub="byte")))
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, content_transformer(tolower))
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, content_transformer(removePunctuation))
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, content_transformer(removeNumbers))
+Remove_to_empty <- content_transformer(function(x, pattern) gsub(pattern, " ", x))
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, Remove_to_empty , "(f|ht)tp(s?)://(.*)[.][:alnum:]+")
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, Remove_to_empty, "@[^\\S]+")
+#removeURL <- function(x) gsub("http[[:alnum:]]*", "", x) 
+#cleanSample <- tm_map(cleanSample, content_transformer(removeURL))
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, stripWhitespace)
+clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, removeWords, stopwords("english"))
+clean_Sample_Corpus_US  <- tm_map(clean_Sample_Corpus_US, removeWords, sapply(profanityWords_EN, as.character))
+#clean_Sample_Corpus_US <- tm_map(clean_Sample_Corpus_US, stemDocument)
+#clean_Sample_Corpus_US<- tm_map(clean_Sample_Corpus_US, PlainTextDocument)
+#cleanSample <- tm_map(cleanSample, stripWhitespace)
+
+#save final data
+
+final_Sample_US<-data.frame(sentence=unlist(sapply(clean_Sample_Corpus_US,`[`,"content")), stringsAsFactors = FALSE)
+
+
+
+## Building the tokenization function for the n-grams
+library(RWeka)
+library(rJava)
+ngramTokenizer <- function(Corpus, wordcount) {
+        ngramFunction <- RWeka::NGramTokenizer(Corpus, 
+                                               RWeka::Weka_control(min = wordcount, max = wordcount, 
+                                                     delimiters = " \\r\\n\\t.,;:\"()?!"))
+        ngramFunction <- data.frame(table(ngramFunction))
+        ngramFunction <- ngramFunction[order(ngramFunction$Freq, decreasing = TRUE),][1:20,]
+        colnames(ngramFunction) <- c("Words","Freq")
+        ngramFunction
+}
+
+
+
+unigram <- ngramTokenizer(final_Sample_US, 1)
+bigram <- ngramTokenizer(final_Sample_US, 2)
+trigram <- ngramTokenizer(final_Sample_US, 3)
+quadgram <- ngramTokenizer(final_Sample_US, 4)
+
+
+
+```
+
+#some charts to illustrate the feature of the data
+```{r plot}
+
+#word_count for sample file
+library(wordcloud)
+library(RColorBrewer)
+sample_TDM <- TermDocumentMatrix(head(clean_Sample_Corpus_US))
+word_cloud <- as.matrix(sample_TDM)
+word_table <- sort(rowSums(word_cloud),decreasing=TRUE)
+word_freq <- data.frame(word = names(word_table),freq=word_table)
+wordcloud(word_freq$word,word_freq$freq,
+          c(3,.1),30,
+          random.order=FALSE,
+          colors=brewer.pal(7, "Greens"))
+
+#top 20 string plot from 2-gram, 3-gram, 4-gram
+library(ggplot2)
+p<-ggplot(data=bigram, aes(x=Words, y=Freq))
+p+geom_bar(stat="identity", color="black", fill="green") + labs(title="Top 20 Word Frequency from bigram", x ="Words", y="Frequency") +theme(axis.text.x=element_text(angle=90,hjust=1))+theme(plot.title = element_text(hjust = 0.5))
+
+p1<-ggplot(data=trigram, aes(x=Words, y=Freq))
+p1+geom_bar(stat="identity", color="black", fill="green") + labs(title="Top 20 Word Frequency from trigram", x ="Words", y="Frequency") +theme(axis.text.x=element_text(angle=90,hjust=1))+theme(plot.title = element_text(hjust = 0.5))
+
+p2<-ggplot(data=quadgram, aes(x=Words, y=Freq))
+p2+geom_bar(stat="identity", color="black", fill="green") + labs(title="Top 20 Word Frequency from quadgram", x ="Words", y="Frequency") +theme(axis.text.x=element_text(angle=90,hjust=1))+theme(plot.title = element_text(hjust = 0.5))
+        
+        
+```
